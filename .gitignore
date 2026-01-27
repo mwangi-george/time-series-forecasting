@@ -50,3 +50,5 @@ rsconnect/
 
 # other files
 .DS_Store
+
+/.quarto/

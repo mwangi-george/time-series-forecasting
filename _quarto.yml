@@ -1,0 +1,22 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "George N. Mwangi"
+  navbar:
+    left:
+      - text: "Blog"
+        href: index.qmd
+    right:
+      - href: https://github.com/mwangi-george
+      - icon: fa-github
+      - href: https://twitter.com/mwangi__george
+      - icon: fa-twitter
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    
+  
