@@ -54,11 +54,11 @@ Whether you’re an analyst trying to improve forecast accuracy, a data scientis
 
 ## Workspace setup
 
-To build our forecasting models, we’ll work entirely within the **tidy modeling ecosystem in R**, which emphasizes readable code, reproducibility, and modular workflows. We’ll rely on three core machine learning libraries—**`modeltime`**, **`tidymodels`**, and **`workflowsets`**—alongside two essential data and time-series packages: `tidyverse` and **`timetk`**.
+To build our forecasting models, we’ll work entirely within the **tidy modeling ecosystem in R**, which emphasizes readable code, reproducibility, and modular workflows. We’ll rely on three core machine learning libraries—**`modeltime`**, **`tidymodels`**, and **`workflowsets`**—alongside two essential data and time-series packages: `dplyr` and **`timetk`**.
 
 At the center of this workflow is the [**Modeltime ecosystem**](https://business-science.github.io/modeltime/articles/getting-started-with-modeltime.html "See documentation"), which extends `tidymodels` with first-class support for time series forecasting. Modeltime provides a unified interface for fitting, calibrating, comparing, and evaluating both classical statistical models and modern machine learning approaches (such as boosted trees and neural networks) using tidy data principles. By integrating seamlessly with `timetk`, it makes feature engineering for time-based data—lags, rolling statistics, and seasonal signatures—both intuitive and scalable.
 
-`tidymodels` gives us a consistent framework for preprocessing, model specification, and evaluation, while `workflowsets` allows us to experiment with multiple models and feature combinations in a structured and repeatable way. Together with `tidyverse` for data manipulation and `timetk` for time-series visualization and feature engineering, this setup lets us move cleanly from raw historical sales data to production-ready forecasts.
+`tidymodels` gives us a consistent framework for preprocessing, model specification, and evaluation, while `workflowsets` allows us to experiment with multiple models and feature combinations in a structured and repeatable way. Together with `dplyr` for data manipulation and `timetk` for time-series visualization and feature engineering, this setup lets us move cleanly from raw historical sales data to production-ready forecasts.
 
 ```{r message=FALSE}
 # Machine Learning
@@ -68,7 +68,7 @@ library(workflowsets) # manage and compare many model/preprocess workflows at on
 
 # Core
 library(timetk)       # time series plotting helpers, and feature engineering
-library(tidyverse)    # core data manipulation 
+library(dplyr)        # core data manipulation
 
 # Avoid scientific notation for large values (e.g., 250000 instead of 2.5e+05)
 options(scipen = 999)
@@ -103,9 +103,8 @@ The data spans **multiple consecutive years**, providing enough history to obser
 # Load and prepare the sales dataset
 # ------------------------------------------------------------------------------
 
-raw_sales_df <- read_csv(
+raw_sales_df <- read.csv(
   "data/sales_timeseries_monthly.csv",
-  show_col_types = FALSE
 ) |>
   mutate(
     date = lubridate::mdy(date)  # Parse date column into Date type

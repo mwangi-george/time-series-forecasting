@@ -30,7 +30,7 @@ jobs:
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           packages: |
-            any::tidyverse
+            any::dplyr
             any::tidymodels
             any::modeltime
             any::workflowsets
