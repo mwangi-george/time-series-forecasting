@@ -1,10 +1,20 @@
 ---
-title: "Blog"
 listing:
   contents: .
   type: default
   sort: "date desc"
-  categories: true
 ---
 
-Welcome to my blog.
+::::: columns
+::: {.column width="30%"}
+![](blogs/001-hyperparameter-tuning-example/img/author.jpeg){fig-alt="Sales forecast chart" width="200"}
+:::
+
+::: {.column width="70%"}
+Hi there,
+
+My name is [George Mwangi,](https://github.com/mwangi-george) a software engineer and data professional specializing in machine learning, data analytics, and digital health systems design & development. My work focuses on building practical, production-ready solutions for forecasting, decision support, and data-driven planning. I am particularly interested in applying modern data science tools to solve real-world business and public health sector problems.
+:::
+:::::
+
+------------------------------------------------------------------------
