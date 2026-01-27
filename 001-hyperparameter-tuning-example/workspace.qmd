@@ -1,0 +1,540 @@
+---
+title: "Sales Forecasting with Machine Learning in R"
+subtitle: "An end-to-end, practical workflow using Modeltime, Tidymodels, and XGBoost"
+author:
+  - name: "George N. Mwangi"
+    url: "https://github.com/mwangi-george"
+    affiliation: "inSupply Health"
+    email: "mwangigeorge648@gmail.com"
+date: today
+description: "A practical walkthrough for forecasting monthly sales using Modeltime, Tidymodels, and XGBoost in R."
+categories: ["Forecasting", "Machine Learning", "R", "Time Series"]
+tags: ["modeltime", "tidymodels", "xgboost", "workflowsets", "timetk", "sales forecasting"]
+
+# Title Banner Appearance 
+title-block-banner: "#2456ED"
+title-block-banner-color: "white"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: right
+    toc-title: "On this page"
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    number-sections: true
+    smooth-scroll: true
+    link-external-newwindow: true
+
+    # Clean table rendering
+    df-print: paged
+    tbl-cap-location: top
+    grid:
+      body-width: 900px
+      margin-width: 260px
+      sidebar-width: 260px
+  
+editor: visual
+---
+
+![](img/cover.avif)
+
+## Introduction
+
+Sales forecasting used to be a game of spreadsheets, gut feeling, and crossed fingers. Today, machine learning lets us move beyond guesswork and start making predictions that actually learn from data.
+
+In this post, we’ll explore how to build practical sales forecasting models using **R**, a language loved for its statistical depth and elegant data tooling. Without drowning in theory, we’ll walk through how historical sales data can be transformed into forward-looking insights using modern machine learning techniques.
+
+Whether you’re an analyst trying to improve forecast accuracy, a data scientist working in R, or a business professional curious about how machine learning really works under the hood, this guide will show you how to turn past sales into smarter decisions about the future.
+
+------------------------------------------------------------------------
+
+## Workspace setup
+
+To build our forecasting models, we’ll work entirely within the **tidy modeling ecosystem in R**, which emphasizes readable code, reproducibility, and modular workflows. We’ll rely on three core machine learning libraries—**`modeltime`**, **`tidymodels`**, and **`workflowsets`**—alongside two essential data and time-series packages: `tidyverse` and **`timetk`**.
+
+At the center of this workflow is the [**Modeltime ecosystem**](https://business-science.github.io/modeltime/articles/getting-started-with-modeltime.html "See documentation"), which extends `tidymodels` with first-class support for time series forecasting. Modeltime provides a unified interface for fitting, calibrating, comparing, and evaluating both classical statistical models and modern machine learning approaches (such as boosted trees and neural networks) using tidy data principles. By integrating seamlessly with `timetk`, it makes feature engineering for time-based data—lags, rolling statistics, and seasonal signatures—both intuitive and scalable.
+
+`tidymodels` gives us a consistent framework for preprocessing, model specification, and evaluation, while `workflowsets` allows us to experiment with multiple models and feature combinations in a structured and repeatable way. Together with `tidyverse` for data manipulation and `timetk` for time-series visualization and feature engineering, this setup lets us move cleanly from raw historical sales data to production-ready forecasts.
+
+```{r message=FALSE}
+# Machine Learning
+library(tidymodels)   # modeling framework
+library(modeltime)    # time series forecasting workflows built on tidymodels
+library(workflowsets) # manage and compare many model/preprocess workflows at once
+
+# Core
+library(timetk)       # time series plotting helpers, and feature engineering
+library(tidyverse)    # core data manipulation 
+
+# Avoid scientific notation for large values (e.g., 250000 instead of 2.5e+05)
+options(scipen = 999)
+
+# ------------------------------------------------------------------------------
+# Enable parallel processing for model training
+# ------------------------------------------------------------------------------
+
+# Detect available physical CPU cores (optional)
+parallel::detectCores(logical = FALSE)
+
+# Start a parallel backend using 2 cores
+parallel_start(2, .method = "parallel")
+```
+
+------------------------------------------------------------------------
+
+## Dataset overview
+
+The dataset used in this tutorial represents the **historical monthly sales of a single product (Product Y)** for a fictional company called **Metricon**. Each observation corresponds to the total sales recorded in a given month, making the data naturally suited for time series analysis and forecasting.
+
+The dataset contains **two columns**:
+
+-   **`date`** – the first day of each month, representing the sales period
+
+-   **`value`** – the total sales volume for Product Y in that month
+
+The data spans **multiple consecutive years**, providing enough history to observe long-term trends, seasonal patterns, and periods of growth or volatility. In the sections that follow, we’ll first explore the structure of the data by inspecting the first and last few records, then visualize the full time series to better understand its overall behavior before applying machine learning models for forecasting.
+
+```{r message=FALSE}
+# ------------------------------------------------------------------------------
+# Load and prepare the sales dataset
+# ------------------------------------------------------------------------------
+
+raw_sales_df <- read_csv(
+  "data/sales_timeseries_monthly.csv",
+  show_col_types = FALSE
+) |>
+  mutate(
+    date = lubridate::mdy(date)  # Parse date column into Date type
+  )
+
+
+# ------------------------------------------------------------------------------
+# Quick data inspection
+# ------------------------------------------------------------------------------
+
+# Preview the first 3 observations
+raw_sales_df |>
+  slice_head(n = 3)
+
+# Preview the last 3 observations
+raw_sales_df |>
+  slice_tail(n = 3)
+
+
+# ------------------------------------------------------------------------------
+# Visualize historical sales trend
+# ------------------------------------------------------------------------------
+
+raw_sales_df |>
+  plot_time_series(
+    .date_var = date,
+    .value    = value,
+    .title    = "Product Y Sales Trend over Time",
+    .y_lab = "Sales in USD"
+  )
+```
+
+The historical sales trend for **Product Y at Metricon** shows a business that has steadily grown over time, but not without meaningful volatility along the way. In the earlier years of the series, sales fluctuate around a lower baseline, with noticeable month-to-month swings that suggest an immature or stabilizing market phase. From around **2020 onward**, a clear upward trajectory begins to emerge. By the most recent periods, sales reach their highest levels in the dataset, indicating strong momentum and increasing demand for Product Y.
+
+------------------------------------------------------------------------
+
+## Anomaly detection
+
+Before building forecasting models, it’s important to understand whether the historical data contains **unusual or unexpected behavior**. The anomaly diagnostics plot highlights periods where sales of Product Y significantly deviate from the expected range, flagging potential outliers caused by events such as promotions, supply disruptions, or reporting issues. Identifying these anomalies early helps ensure that forecasting models learn genuine patterns rather than noise, ultimately leading to more reliable and robust predictions.
+
+```{r message=FALSE, warning=FALSE}
+
+# ------------------------------------------------------------------------------
+# Visualize anomaly diagnostics in the sales time series
+# ------------------------------------------------------------------------------
+
+raw_sales_df |>
+  plot_anomaly_diagnostics(
+    .date_var    = date,
+    .value       = value,
+    .title       = "Product Y Anomaly Diagnostics",
+    .y_lab = "Sales in USD",
+    .alpha       = 0.10,   # Sensitivity level for anomaly detection
+    .legend_show = FALSE  # Hide legend for a cleaner visualization
+  )
+
+```
+
+The code chunk below focuses on **cleaning the historical sales data before forecasting**. Using anomaly detection, we identify months where Product Y’s sales significantly deviate from the expected pattern. Instead of removing these observations entirely, the workflow replaces anomalous values with a cleaned estimate that better reflects the underlying trend to preserve the continuity of the time series while preventing extreme values from distorting downstream machine learning models. Finally, the cleaned series is replotted to visually confirm that the long-term trend remains intact, but with reduced noise.
+
+```{r message=FALSE}
+
+# ------------------------------------------------------------------------------
+# Detect anomalies in the historical sales data
+# ------------------------------------------------------------------------------
+
+anomaly_results_df <- raw_sales_df |>
+  anomalize(
+    .date_var  = date,
+    .value     = value,
+    .iqr_alpha = 0.10   # Sensitivity level for anomaly detection
+  )
+
+# Inspect a few records to understand the anomaly flags
+anomaly_results_df |>
+  slice_head(n = 3) |>
+  select(date, observed, anomaly, trend, observed_clean)
+
+
+# ------------------------------------------------------------------------------
+# Replace anomalous values with cleaned estimates
+# ------------------------------------------------------------------------------
+
+cleaned_sales_df <- anomaly_results_df |>
+  transmute(
+    date,
+    value = if_else(
+      anomaly == "Yes",
+      observed_clean,  # Use cleaned value when anomaly is detected
+      observed         # Otherwise keep the original observation
+    )
+  )
+
+
+# ------------------------------------------------------------------------------
+# Visualize the cleaned time series
+# ------------------------------------------------------------------------------
+
+cleaned_sales_df |>
+  plot_time_series(
+    .date_var = date,
+    .value    = value,
+    .title    = "Product Y Sales Trend over Time (Anomalies Adjusted)",
+    .y_lab = "Sales in USD"
+  )
+
+```
+
+------------------------------------------------------------------------
+
+## Train–test splitting for time series
+
+Before training any forecasting models, we split the cleaned sales data into **training and testing sets using a temporal split**. Unlike random sampling, time series data must respect chronological order to avoid data leakage. In this setup, the model is trained on all historical observations up to a cutoff point and evaluated on the **most recent 12 months**, simulating a real-world forecasting scenario. The cumulative training window allows the model to learn from an expanding history over time, while the visualization of the cross-validation plan helps confirm that the split is both temporally sound and aligned with how forecasts will be used in practice.
+
+```{r}
+# ------------------------------------------------------------------------------
+# Train / test split (temporal holdout)
+# - We keep time order intact to avoid leakage.
+# - The last 12 months are held out for testing.
+# - cumulative = TRUE uses an expanding training window.
+# ------------------------------------------------------------------------------
+
+sales_split <- cleaned_sales_df |>
+  time_series_split(
+    date_var    = date,
+    assess      = "12 months",
+    cumulative  = TRUE
+  )
+
+# View the split summary (prints the rsample split object)
+sales_split
+
+
+# ------------------------------------------------------------------------------
+# Visualize the split as a CV plan (train vs test over time)
+# ------------------------------------------------------------------------------
+
+sales_split |>
+  tk_time_series_cv_plan() |>
+  plot_time_series_cv_plan(
+    .date_var = date,
+    .value    = value,
+    .y_lab    = "Sales in USD",
+    .title    = "Train/Test Temporal Split (12-Month Holdout)"
+  )
+
+```
+
+------------------------------------------------------------------------
+
+## Feature engineering for time series modeling
+
+To enable machine learning models to learn from temporal patterns, we transform the raw date information into meaningful numerical features using a preprocessing recipe. The time series signature expands the date column into multiple components such as trend, seasonality, and calendar-based signals, which are then cleaned and standardized for modeling. Redundant and zero-variance features are removed to reduce noise, while categorical time features are one-hot encoded to ensure compatibility with most machine learning algorithms. This structured feature engineering step allows models to capture complex time-dependent behavior beyond what raw timestamps alone can provide.
+
+```{r}
+# ------------------------------------------------------------------------------
+# Feature engineering (tidymodels recipe)
+# - Convert the date into rich time-based features (trend + seasonality signals)
+# - Remove the original date column to avoid leakage / redundancy
+# - Normalize the numeric time index for ML models that benefit from scaling
+# - Drop zero-variance predictors (features that never change)
+# - One-hot encode categorical time features (month labels, weekdays, etc.)
+# ------------------------------------------------------------------------------
+
+sales_recipe <- recipe(value ~ date, data = training(sales_split)) |>
+  step_timeseries_signature(date) |>
+  step_rm(date) |>                
+  step_normalize(date_index.num) |>
+  step_zv(all_predictors()) |>
+  step_dummy(all_nominal_predictors(), one_hot = TRUE)
+
+# Inspect the recipe steps
+sales_recipe
+```
+
+------------------------------------------------------------------------
+
+## Model Specification
+
+With our time-based features ready, the next step is to **define the models we want to try**. Instead of relying on a single configuration, we evaluate multiple **XGBoost** models by varying key hyperparameters such as **learning rate, tree depth, and regularization** strength.
+
+::: callout-note
+XGBoost (Extreme Gradient Boosting) is a high-performance machine learning algorithm that builds powerful predictive models by combining many decision trees in a sequential, error-correcting manner. It is widely used for regression and classification tasks because it efficiently captures complex nonlinear patterns while offering strong accuracy, scalability, and regularization to prevent overfitting.
+:::
+
+```{r}
+# ------------------------------------------------------------------------------
+# Model specification (XGBoost regression)
+# ------------------------------------------------------------------------------
+
+
+# Hyperparameter grid (learn_rate + depth + min_n + loss_reduction)
+xgb_param_grid <- tidyr::crossing(
+  learn_rate     = c(0.001, 0.01, 0.1, 0.2, 0.35),
+  tree_depth     = c(2L, 4L, 6L, 8L),
+  min_n          = c(2L, 5L, 10L, 20L),
+  loss_reduction = c(0, 0.01, 0.1, 1)
+)
+
+# ------------------------------------------------------------------------------
+# Create model specifications for each hyperparameter combination
+# ------------------------------------------------------------------------------
+
+xgb_spec_tbl <- create_model_grid(
+  grid         = xgb_param_grid,
+  f_model_spec = boost_tree,
+  engine_name  = "xgboost",
+  mode         = "regression"
+)
+
+# Review the model specification table (includes parameters + model objects)
+xgb_spec_tbl
+
+# Extract the list of parsnip model specifications (useful for workflowsets)
+xgb_model_list <- xgb_spec_tbl$.models
+
+# Preview first 2 specs
+xgb_model_list[1:2]
+```
+
+------------------------------------------------------------------------
+
+## Workflow sets
+
+Workflow sets allow us to systematically **combine preprocessing recipes and model specifications into comparable modeling pipelines**. In this case, we pair a single time-series recipe with multiple XGBoost configurations, creating a collection of untrained workflows that can be fit and evaluated consistently.
+
+```{r}
+# ------------------------------------------------------------------------------
+# Workflow sets
+# - Combine the preprocessing recipe with multiple XGBoost model specifications
+# - Each workflow represents one unique recipe–model combination
+# - Workflows are created unfitted and will be trained during evaluation
+# ------------------------------------------------------------------------------
+
+sales_workflow_set <- workflow_set(
+  preproc = list(sales_recipe = sales_recipe),
+  models  = xgb_model_list,
+  cross   = TRUE
+)
+
+# Inspect the workflow set
+sales_workflow_set
+
+```
+
+------------------------------------------------------------------------
+
+## Fitting Using Parallel Backend
+
+We will now train all recipe–model combinations by fitting the workflow set on the training portion of the time series. By enabling parallel execution, each workflow is trained concurrently across multiple CPU cores, significantly reducing total runtime while providing clear progress feedback during the fitting process.
+
+```{r}
+# ------------------------------------------------------------------------------
+# Parallel model training (workflow set fitting)
+# - Fit all workflows on the training data
+# - Enable parallel processing to speed up computation
+# - Verbose output shows progress for each workflow
+# ------------------------------------------------------------------------------
+
+fitted_models_tbl <- sales_workflow_set |>
+  modeltime_fit_workflowset(
+    data = training(sales_split),
+    control = control_fit_workflowset(
+      verbose   = TRUE,  # Display progress during fitting
+      allow_par = TRUE   # Use the active parallel backend
+    )
+  )
+
+# Inspect fitted workflows
+fitted_models_tbl
+```
+
+------------------------------------------------------------------------
+
+## Accuracy assessment
+
+After fitting the models, we evaluate their out-of-sample performance by calibrating each workflow on the test set and computing standard forecast accuracy metrics. Comparing these results allows us to identify the best-performing configuration, with **Model 277 achieving the lowest Mean Absolute Error (MAE)** and therefore providing the most accurate forecasts on unseen data.
+
+```{r message=FALSE, warning=FALSE}
+# ------------------------------------------------------------------------------
+# Model evaluation and accuracy comparison
+# - Calibrate fitted models on the test set
+# - Compute standard forecast accuracy metrics
+# - Rank models to identify the best performer
+# ------------------------------------------------------------------------------
+
+calibration_tbl <- fitted_models_tbl |>
+  modeltime_calibrate(new_data = testing(sales_split))
+
+model_accuracy_tbl <- calibration_tbl |>
+  modeltime_accuracy() |>
+  arrange(mae) |> 
+  slice_min(mae, n =10)
+
+# Display accuracy results in a readable table
+table_modeltime_accuracy(
+  model_accuracy_tbl,
+  .interactive = FALSE
+)
+
+```
+
+------------------------------------------------------------------------
+
+## Forecast Assessment
+
+To complement the numerical accuracy metrics, we visually assess how each model’s forecasts compare against the actual sales during the testing period. This side-by-side visualization helps reveal differences in trend capture, responsiveness to changes, and overall forecast stability that may not be fully apparent from error metrics alone.
+
+```{r warning=FALSE}
+# ------------------------------------------------------------------------------
+# Forecast assessment (visual comparison on test set)
+# - Generate forecasts for each fitted model on the test period
+# - Overlay predictions with actual historical sales
+# - Retain underlying data for further inspection if needed
+# ------------------------------------------------------------------------------
+
+forecast_comparison_tbl <- calibration_tbl |>
+  # filter for the 10 best models 
+  filter(.model_id %in% model_accuracy_tbl$.model_id) |> 
+  modeltime_forecast(
+    new_data    = testing(sales_split),
+    actual_data = cleaned_sales_df,
+    keep_data   = TRUE
+  )
+
+# Plot forecasts vs actuals for visual evaluation
+forecast_comparison_tbl |>
+  plot_modeltime_forecast(
+    .legend_max_width = 10, # For mobile screens
+    .conf_interval_show = FALSE,
+    .title = "Model Forecasts vs Actual Sales (Test Set)"
+  )
+```
+
+------------------------------------------------------------------------
+
+## Refit to Full Dataset & Forecast Forward
+
+After ranking models on the test set, we select the top performer (lowest MAE) and then **refit it using the full cleaned dataset** so it can learn from all available history. Finally, we generate a **24-month ahead forecast** and plot it alongside the historical sales to visualize the expected future trajectory.
+
+```{r}
+
+# ------------------------------------------------------------------------------
+# Select the best model (lowest MAE)
+# - slice_min() can return ties, so we break ties deterministically with_mae then
+#   take the first row.
+# ------------------------------------------------------------------------------
+
+best_model_id <- model_accuracy_tbl |>
+  arrange(mae, .model_id) |>
+  slice_head(n = 1) |>
+  pull(.model_id)
+
+# ------------------------------------------------------------------------------
+# Refit the winning model on the full dataset
+# - Re-training on all history improves the final model before forecasting
+# ------------------------------------------------------------------------------
+
+final_xgb_tbl <- calibration_tbl |>
+  filter(.model_id == best_model_id) |>
+  modeltime_refit(data = cleaned_sales_df)
+
+# ------------------------------------------------------------------------------
+# Forecast the next 24 months and visualize
+# ------------------------------------------------------------------------------
+
+future_forecast_tbl <- final_xgb_tbl |>
+  modeltime_forecast(
+    h = "24 months",
+    actual_data = cleaned_sales_df
+  )
+
+future_forecast_tbl |>
+  plot_modeltime_forecast(
+    .legend_show = FALSE,
+    .title = "Final XGBoost Sales Forecast for Product Y (24-Month Horizon)",
+    .y_lab = "Sales in USD"
+  )
+
+
+# Forecasts dataset
+future_forecast_tbl |> 
+  filter(.key == "prediction") |> 
+  select(
+    date = .index, 
+    lower_limit = .conf_lo,
+    point_estimate = .value,
+    upper_limit = .conf_hi
+  )
+```
+
+```{r}
+parallel_stop()
+```
+
+------------------------------------------------------------------------
+
+## Conclusion
+
+In this post, we walked through an end-to-end machine learning workflow for sales forecasting in R, starting from data exploration and anomaly detection, through feature engineering, model specification, parallel training, evaluation, and finally producing a forward-looking forecast using XGBoost. This approach offers clear benefits: it leverages rich time-based features, uses a robust validation strategy, and produces forecasts that are both data-driven and reproducible. At the same time, it’s important to recognize the limitations, machine learning models like XGBoost can be sensitive to hyperparameter choices, require careful feature engineering, and may not always generalize best across all datasets or business contexts.
+
+For Metricon, these forecasts can directly inform decisions such as inventory planning, budgeting, production scheduling, and scenario analysis by providing a clearer view of expected future demand. However, no single model is universally optimal. In the next post, we’ll broaden the analysis by training and comparing multiple forecasting algorithms on the same sales data to assess whether alternative models can outperform XGBoost and under what conditions, bringing us closer to a truly model-agnostic, decision-ready forecasting strategy.
+
+***Written by***
+
+[**George Mwangi**](https://github.com/mwangi-george) is a software engineer and data professional specializing in machine learning, data analytics, and digital health systems design & development. His work focuses on building practical, production-ready solutions for forecasting, decision support, and data-driven planning. He is particularly interested in applying modern data science tools to solve real-world business and public health sector problems.
+
+[![](img/author.jpeg){width="200"}](https://www.linkedin.com/in/georgemwangikenya/)
+
+*You can connect with George on:*
+
+-   LinkedIn: [https://www.linkedin.com/in/georgemwangikenya](https://www.linkedin.com/in/georgemwangikenya/)
+
+-   GitHub: <https://github.com/mwangi-george>
+
+------------------------------------------------------------------------
+
+<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+
+Session Information
+
+</button>
+
+:::: {#collapseOne .accordion-collapse .collapse}
+<div>
+
+```{r}
+sessionInfo()
+```
+
+</div>
+::::
