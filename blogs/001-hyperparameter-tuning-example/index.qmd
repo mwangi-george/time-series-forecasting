@@ -7,7 +7,7 @@ author:
     affiliation: "inSupply Health"
     email: "mwangigeorge648@gmail.com"
 date: today
-description: "A practical walkthrough for forecasting monthly sales using Modeltime, Tidymodels, and XGBoost in R."
+description: "A practical walkthrough in R."
 categories: ["Forecasting", "Machine Learning", "R", "Time Series"]
 tags: ["modeltime", "tidymodels", "xgboost", "workflowsets", "timetk", "sales forecasting"]
 
@@ -25,9 +25,9 @@ format:
     code-fold: false
     code-tools: true
     code-copy: true
-    number-sections: true
     smooth-scroll: true
     link-external-newwindow: true
+    css: public/css/styles.index.css
 
     # Clean table rendering
     df-print: paged

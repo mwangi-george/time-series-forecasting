@@ -1,16 +1,54 @@
 ---
+title: "George Mwangi"
+subtitle: "Software Engineer • Data Scientist • Digital Health Architect"
+page-layout: full
+about:
+  template: solana
+  image: blogs/001-hyperparameter-tuning-example/img/author.jpeg
+  links:
+    - icon: github
+      text: GitHub
+      href: https://github.com/mwangi-george
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/georgemwangikenya/
+    - icon: twitter-x
+      href: https://twitter.com/mwangi__george
+      aria-label: Twitter
+      
+format:
+  html:
+    toc: false
+    smooth-scroll: true
+    link-external-newwindow: true
+    css: public/css/styles.index.css
 listing:
-  contents: .
+  contents: blogs
   type: default
   sort: "date desc"
 ---
 
-::: columns
-![](blogs/001-hyperparameter-tuning-example/img/author.jpeg){fig-alt="Sales forecast chart" width="200"}
+Hi there! I’m [**George Mwangi**](https://github.com/mwangi-george), a software engineer and data professional specializing in the intersection of machine learning, data analytics, and digital health systems. My work focuses on building practical, **production-ready solutions** for forecasting, decision support, and data-driven planning.
 
-Hi there,
+I am particularly interested in applying modern data science tools to solve real-world business challenges and public health sector problems.
 
-My name is [George Mwangi,](https://github.com/mwangi-george) a software engineer and data professional specializing in machine learning, data analytics, and digital health systems design & development. My work focuses on building practical, production-ready solutions for forecasting, decision support, and data-driven planning. I am particularly interested in applying modern data science tools to solve real-world business and public health sector problems.
+### Technical Arsenal
+
+I bridge the gap between large-scale data processing and modern web architecture using a specialized stack:
+
+-   **Data & Backend:** Expert-level **Python**, **R**, and **SQL**. I build high-performance APIs and backends using **FastAPI** and **GraphQL**.
+
+-   **Frontend & Interactivity:** I craft responsive user interfaces using **TypeScript** and **React**, and I specialize in rapid-prototyping data dashboards with **RShiny**.
+
+-   **Domain Expertise:** Digital Health Systems (DHIS2 integration, health informatics), Machine Learning deployment, and Predictive Modeling.
+
+------------------------------------------------------------------------
+
+### My Blogs
+
+In my free time, I am a firm believer in the "Learn in Public" philosophy. I love to share the knowledge I’ve acquired over the years to help fellow engineers and data professionals navigating similar paths. I write to turn complex technical hurdles into clear, actionable roadmaps for others. You can explore my blog posts below.
+
+::: h-10
 :::
 
 ------------------------------------------------------------------------
