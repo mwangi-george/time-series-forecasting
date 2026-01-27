@@ -12,8 +12,8 @@ categories: ["Forecasting", "Machine Learning", "R", "Time Series"]
 tags: ["modeltime", "tidymodels", "xgboost", "workflowsets", "timetk", "sales forecasting"]
 
 # Title Banner Appearance 
-title-block-banner: "#2456ED"
-title-block-banner-color: "white"
+title-block-banner: "#F5F7FA"
+title-block-banner-color: "black"
 
 format:
   html:

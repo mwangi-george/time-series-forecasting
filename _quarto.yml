@@ -4,23 +4,42 @@ project:
 
 website:
   title: "George Mwangi"
+  description: "Portfolio and Technical Blog of George Mwangi"
+  
+  # Site Favicon (Production essential)
+  favicon: public/img/favicon_io/facicon-32x32.png
+
   navbar:
+    background: primary # Options: primary, light, dark
+    search: true        # Adds a functional search bar
+    
     left:
       - text: "Home"
+        icon: house
         href: index.qmd
+      - text: "Projects"
+        icon: briefcase
+        href: projects.qmd
+      - text: "About"
+        href: about.qmd
+
     right:
-      - text: "Github"
+      - icon: github
         href: https://github.com/mwangi-george
-        icon: fa-github
-      - text: "LinkedIn"
+        aria-label: GitHub
+      - icon: linkedin
         href: https://www.linkedin.com/in/georgemwangikenya/
-        icon: fa-twitter
+        aria-label: LinkedIn
+      - icon: twitter-x
+        href: https://twitter.com/mwangi__george
+        aria-label: Twitter
 
 format:
   html:
-    theme: cosmo
+    theme: 
+      light: cosmo
+      dark: darkly   # Modern 'Dark Mode' toggle
     toc: true
-
-output:
-  html_document:
+    code-fold: true   # Makes code chunks collapsible
+    code-copy: true   # Adds a copy button to code blocks
   
