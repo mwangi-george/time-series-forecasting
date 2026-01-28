@@ -138,7 +138,25 @@ raw_sales_df |>
 
 The historical sales trend for **Product Y at Metricon** shows a business that has steadily grown over time, but not without meaningful volatility along the way. In the earlier years of the series, sales fluctuate around a lower baseline, with noticeable month-to-month swings that suggest an immature or stabilizing market phase. From around **2020 onward**, a clear upward trajectory begins to emerge. By the most recent periods, sales reach their highest levels in the dataset, indicating strong momentum and increasing demand for Product Y.
 
-------------------------------------------------------------------------
+## Seasonal Diagnostics
+
+To better understand recurring patterns in the sales data, we use seasonal diagnostics to examine how sales behave across **months, quarters, and years**.
+
+```{r message=FALSE, fig.height=7, fig.width=12}
+# ------------------------------------------------------------------------------
+# Seasonal diagnostics
+# - Examine sales distributions by month, quarter, and year
+# - Helps identify recurring seasonal patterns and long-term shifts
+# ------------------------------------------------------------------------------
+
+raw_sales_df |>
+  plot_seasonal_diagnostics(
+    .date_var = date,
+    .value    = value
+  )
+```
+
+This chart shows Sales for Product Y show clear **annual growth over time**, with stronger performance toward the **second half of the year**.
 
 ## Anomaly detection
 
@@ -348,6 +366,8 @@ sales_workflow_set <- workflow_set(
 sales_workflow_set
 
 ```
+
+This gives us a total of r\` nrow(sales_workflow_set)\` model combinations to train
 
 ------------------------------------------------------------------------
 
