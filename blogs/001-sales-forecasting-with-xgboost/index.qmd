@@ -104,10 +104,8 @@ The data spans **multiple consecutive years**, providing enough history to obser
 
 raw_sales_df <- read.csv(
   "data/sales_timeseries_monthly.csv",
-) |>
-  mutate(
-    date = lubridate::mdy(date)  # Parse date column into Date type
-  )
+  ) |>
+  mutate(date = lubridate::mdy(date))  # Parse date column into Date type
 
 
 # ------------------------------------------------------------------------------
@@ -301,10 +299,10 @@ sales_recipe
 
 ## Model Specification
 
-With our time-based features ready, the next step is to **define the models we want to try**. Instead of relying on a single configuration, we evaluate multiple **XGBoost** models by varying key hyperparameters such as **learning rate, tree depth, and regularization** strength.
+With our time-based features in place, the next step is to define the models we want to evaluate. In this post, we focus on the **XGBoost** machine learning algorithm. Rather than relying on a single configuration, we explore multiple XGBoost models by systematically varying key hyperparameters, such as the **learning rate, tree depth, and regularization strength** to identify the most effective setup.
 
 ::: callout-note
-XGBoost (Extreme Gradient Boosting) is a high-performance machine learning algorithm that builds powerful predictive models by combining many decision trees in a sequential, error-correcting manner. It is widely used for regression and classification tasks because it efficiently captures complex nonlinear patterns while offering strong accuracy, scalability, and regularization to prevent overfitting.
+XGBoost (Extreme Gradient Boosting) is a high-performance machine learning algorithm that builds powerful predictive models by combining many decision trees in a sequential, error-correcting manner. It is widely used for regression and classification tasks because it efficiently captures complex nonlinear patterns while offering strong accuracy, scalability, and regularization to prevent over-fitting.
 :::
 
 ```{r}
@@ -367,7 +365,7 @@ sales_workflow_set
 
 ```
 
-This gives us a total of r\` nrow(sales_workflow_set)\` model combinations to train
+This gives us a total of 320 recipe–model combinations to train
 
 ------------------------------------------------------------------------
 
@@ -426,9 +424,7 @@ table_modeltime_accuracy(
 
 ```
 
-------------------------------------------------------------------------
-
-## Forecast Assessment
+From the table above, the top-performing XGBoost hyperparameter configurations achieve a **MAE of \~43k and MAPE of \~18% on the test set**, with several models delivering virtually identical accuracy, indicating a **stable performance plateau** where small hyperparameter changes no longer materially improve forecast quality.
 
 To complement the numerical accuracy metrics, we visually assess how each model’s forecasts compare against the actual sales during the testing period. This side-by-side visualization helps reveal differences in trend capture, responsiveness to changes, and overall forecast stability that may not be fully apparent from error metrics alone.
 
@@ -523,7 +519,9 @@ parallel_stop()
 
 ## Conclusion
 
-In this post, we walked through an end-to-end machine learning workflow for sales forecasting in R, starting from data exploration and anomaly detection, through feature engineering, model specification, parallel training, evaluation, and finally producing a forward-looking forecast using XGBoost. This approach offers clear benefits: it leverages rich time-based features, uses a robust validation strategy, and produces forecasts that are both data-driven and reproducible. At the same time, it’s important to recognize the limitations, machine learning models like XGBoost can be sensitive to hyperparameter choices, require careful feature engineering, and may not always generalize best across all datasets or business contexts.
+In this post, we walked through an end-to-end machine learning workflow for sales forecasting in R, starting from data exploration and anomaly detection, through feature engineering, model specification, parallel training, evaluation, and finally producing a forward-looking forecast using XGBoost.
+
+This approach offers clear benefits: it leverages rich time-based features, uses a robust validation strategy, and produces forecasts that are both data-driven and reproducible. At the same time, it’s important to recognize the limitations, machine learning models like XGBoost can be sensitive to hyperparameter choices, require careful feature engineering, and may not always generalize best across all datasets or business contexts.
 
 For Metricon, these forecasts can directly inform decisions such as inventory planning, budgeting, production scheduling, and scenario analysis by providing a clearer view of expected future demand. However, no single model is universally optimal. In the next post, we’ll broaden the analysis by training and comparing multiple forecasting algorithms on the same sales data to assess whether alternative models can outperform XGBoost and under what conditions, bringing us closer to a truly model-agnostic, decision-ready forecasting strategy.
 
@@ -531,11 +529,13 @@ For Metricon, these forecasts can directly inform decisions such as inventory pl
 
 [**George Mwangi**](https://github.com/mwangi-george) is a software engineer and data professional specializing in machine learning, data analytics, and digital health systems design & development. His work focuses on building practical, production-ready solutions for forecasting, decision support, and data-driven planning. He is particularly interested in applying modern data science tools to solve real-world business and public health sector problems.
 
-[![](img/author.jpeg){width="200"}](https://www.linkedin.com/in/georgemwangikenya/)
+[![](img/author.jpeg){width="100"}](https://www.linkedin.com/in/georgemwangikenya/)
 
 *You can connect with George on:*
 
 -   [LinkedIn](https://www.linkedin.com/in/georgemwangikenya)
+
+-   [Website](https://mwangi-george.netlify.app)
 
 -   [GitHub](https://github.com/mwangi-george)
 

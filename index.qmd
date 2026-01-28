@@ -4,7 +4,7 @@ subtitle: "Software Engineer • Data Scientist • Digital Health Architect"
 page-layout: full
 about:
   template: solana
-  image: blogs/001-hyperparameter-tuning-example/img/author.jpeg
+  image: blogs/001-sales-forecasting-with-xgboost/img/author.jpeg
   links:
     - icon: github
       text: GitHub
