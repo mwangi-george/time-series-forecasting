@@ -39,7 +39,7 @@ format:
 editor: visual
 ---
 
-![](img/cover.avif)
+![](img/cover.avif){width="1700"}
 
 ## Introduction
 
@@ -479,7 +479,7 @@ future_forecast_tbl <- final_xgb_tbl |>
 future_forecast_tbl |>
   plot_modeltime_forecast(
     .legend_show = FALSE,
-    .title = "Final XGBoost Sales Forecast for Product Y (24-Month Horizon)",
+    .title = "Final Sales Forecast for Product Y (24-Month Horizon)",
     .y_lab = "Sales in USD"
   )
 
