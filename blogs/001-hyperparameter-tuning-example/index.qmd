@@ -4,7 +4,6 @@ subtitle: "An end-to-end, practical workflow using Modeltime, Tidymodels, and XG
 author:
   - name: "George N. Mwangi"
     url: "https://github.com/mwangi-george"
-    affiliation: "inSupply Health"
     email: "mwangigeorge648@gmail.com"
 date: today
 description: "A practical walkthrough in R."
